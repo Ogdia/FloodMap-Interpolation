@@ -1,0 +1,21 @@
+import rasterio
+import numpy as np
+import csv
+
+study_area_path = r"C:\Users\Bardia\Desktop\Bardia\IUPWARE\FLOOD HAZARD MAP INTERPOLATION\Antwerp DTM\merged_clipped.tif"
+flood_depth_path = r"C:\Users\Bardia\Desktop\Bardia\IUPWARE\FLOOD HAZARD MAP INTERPOLATION\Available flood maps\BARDIA\ICM\ICM_T25_resolution1x1_nodata0.tif"
+#studyarea raster
+with rasterio.open(study_area_path) as src:
+    study_area_data = src.read(1)
+#flood depth raster
+with rasterio.open(flood_depth_path) as src:
+    flood_depth_data = src.read(1)
+#resize and readjustment of reslution
+study_area_data = study_area_data[:flood_depth_data.shape[0], :flood_depth_data.shape[1]]
+flood_depth_data[flood_depth_data < 0] = 0
+
+output_csv = r"C:\Users\Bardia\Desktop\Bardia\IUPWARE\FLOOD HAZARD MAP INTERPOLATION\Available flood maps\BARDIA\ICM\ICM_T25_resolution1x1_nodata0.csv"
+with open(output_csv, 'w', newline='') as csvfile:
+    csv.writer(csvfile).writerows(flood_depth_data)
+
+print(f"Data saved to {output_csv}")
