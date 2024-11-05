@@ -1,0 +1,36 @@
+import numpy as np
+import pandas as pd
+from scipy.optimize import curve_fit
+
+#Gumbel
+def gumbel_log_linear(x, alpha, u):
+    return alpha * x + u
+
+return_periods = np.array([10, 15, 25, 40, 186, 1000])
+target_return_period = 25
+reduced_variate = -np.log(-np.log(1 - 1 / return_periods))
+desired_variate = -np.log(-np.log(1 - 1 / target_return_period))
+
+file_paths = [
+    r'C:\Users\Bardia\Desktop\Result\ICM_Infoworks\current\T10_current_ICM.csv',
+    # Other paths
+]
+flood_maps = np.array([pd.read_csv(path, header=None).values for path in file_paths])
+output_map = np.full_like(flood_maps[0], np.nan, dtype=float)
+loc_param_map, scale_param_map = output_map.copy(), output_map.copy()
+
+# Fit for each cell
+for i in range(flood_maps.shape[1]):
+    for j in range(flood_maps.shape[2]):
+        values = flood_maps[:, i, j]
+        if np.all(values > 0):
+            try:
+                params, _ = curve_fit(gumbel_log_linear, reduced_variate, np.log(values))
+                alpha, u = params
+                loc_param_map[i, j], scale_param_map[i, j] = u, alpha
+                output_map[i, j] = np.exp(gumbel_log_linear(desired_variate, alpha, u))
+            except Exception as e:
+                print(f"Failed at ({i}, {j}): {e}")
+
+# Save output
+pd.DataFrame(output_map).to_csv(r'...\Estimate\T50_test1.csv', index=False, header=False)
