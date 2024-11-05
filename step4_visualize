@@ -1,0 +1,28 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import curve_fit
+from sklearn.metrics import r2_score
+
+#Fit data
+flood_depths = np.array([1.194, 1.411, 1.824, 2.585])
+return_periods = np.array([10, 25, 100, 1000])
+AEP = 1 / return_periods
+def gumbel_log_linear(x, alpha, u):
+    return alpha * np.log(x) + u
+#axis
+params, _ = curve_fit(gumbel_log_linear, AEP, np.log(flood_depths))
+alpha, u = params
+x_fit = np.linspace(min(AEP), max(AEP), 100)
+y_fit = np.exp(gumbel_log_linear(x_fit, alpha, u))
+predicted = np.exp(gumbel_log_linear(AEP, alpha, u))
+
+#visual
+plt.scatter(AEP, flood_depths, color='blue')
+plt.plot(x_fit, y_fit, color='red')
+plt.xlabel('AEP')
+plt.ylabel('Flood Depth (m)')
+plt.title('Flood Depth vs. AEP')
+plt.show()
+
+print(f"Alpha: {alpha}, U: {u}")
+print(f"R-squared: {r2_score(flood_depths, predicted)}")
