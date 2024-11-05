@@ -1,0 +1,33 @@
+import numpy as np
+from scipy.optimize import curve_fit
+
+flood_map_paths = [
+    r'C:\Users\Bardia\Desktop\Result\ICM_Infoworks\current\T10_current_ICM.csv',
+    # Other paths
+]
+return_periods = np.array([10, 15, 25, 40, 100, 186, 1000])
+desired_period = 50
+reduced_variate = -np.log(-np.log(1 - 1 / return_periods))
+target_variate = -np.log(-np.log(1 - 1 / desired_period))
+
+flood_maps = {period: np.genfromtxt(path, delimiter=',') for period, path in zip(return_periods, flood_map_paths)}
+flood_map_25 = np.zeros_like(flood_maps[10])
+
+for i in range(flood_map_25.shape[0]):
+    for j in range(flood_map_25.shape[1]):
+        if flood_maps[25][i, j] > 0 and flood_maps[10][i, j] == 0:
+            values, periods = [], []
+            for period in return_periods[1:]:  # Exclude the 10-year map
+                value = flood_maps[period][i, j]
+                if value > 0:
+                    values.append(value)
+                    periods.append(period)
+            if values:
+                try:
+                    params, _ = curve_fit(gumbel_log_linear, -np.log(-np.log(1 - 1 / np.array(periods))), np.log(values))
+                    alpha, u = params
+                    flood_map_25[i, j] = np.exp(gumbel_log_linear(target_variate, alpha, u))
+                except Exception as e:
+                    print(f"Error at ({i}, {j}): {e}")
+
+np.savetxt(r'...\Estimate\T50_step2_flooded25not10.csv', flood_map_25, delimiter=',
